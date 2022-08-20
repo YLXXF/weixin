@@ -28,11 +28,36 @@ def get_today():
   week = week_list[today.isoweekday() % 7]
   return "{} {}".format(today, week)
 
-def get_weather():
-  url = "http://autodev.openspeech.cn/csp/api/v2.1/weather?openId=aiuicus&clientType=android&sign=android&city=" + city
-  res = requests.get(url).json()
-  weather = res['data']['list'][0]
-  return weather['weather'], math.floor(weather['temp']), math.floor(weather['low']), math.floor(weather['high'])
+def get_weather(province, city):
+    # 城市id
+    try:
+        city_id = cityinfo.cityInfo[province][city]["AREAID"]
+    except KeyError:
+        print("推送消息失败，请检查省份或城市是否正确")
+        os.system("pause")
+        sys.exit(1)
+    # city_id = 101280101
+    # 毫秒级时间戳
+    t = (int(round(time() * 1000)))
+    headers = {
+        "Referer": "http://www.weather.com.cn/weather1d/{}.shtml".format(city_id),
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+                      'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36'
+    }
+    url = "http://d1.weather.com.cn/dingzhi/{}.html?_={}".format(city_id, t)
+    response = get(url, headers=headers)
+    response.encoding = "utf-8"
+    response_data = response.text.split(";")[0].split("=")[-1]
+    response_json = eval(response_data)
+    # print(response_json)
+    weatherinfo = response_json["weatherinfo"]
+    # 天气
+    weather = weatherinfo["weather"]
+    # 最高气温
+    temp = weatherinfo["temp"]
+    # 最低气温
+    tempn = weatherinfo["tempn"]
+    return weather, temp, tempn
 
 def get_count():
   delta = today - datetime.strptime(start_date, "%Y-%m-%d")
